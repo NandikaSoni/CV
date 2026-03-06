@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nandika Soni — AI Engineer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:        #0A0F0D;
+  --bg2:       #0F1710;
+  --green:     #2ECC71;
+  --green-dim: #1A7A42;
+  --green-glow:#2ECC7133;
+  --orange:    #E8874A;
+  --orange-dim:#8A4A20;
+  --cream:     #F0EAD6;
+  --gray:      #8A9A8E;
+  --gray-dim:  #3A4A3E;
+  --white:     #FFFFFF;
+  --node-bg:   #111A13;
+  --node-border:#1E3A24;
+}
+
+body {
+  background: var(--bg);
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--cream);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── CANVAS for neural net lines ── */
+#neural-bg {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+.cv-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 40px 24px 60px;
+}
+
+/* ══════════════════════════════════════
+   HERO — CENTRAL NODE
+══════════════════════════════════════ */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  padding: 48px 24px 32px;
+  margin-bottom: 8px;
+}
+
+/* Pulsing outer rings */
+.hero-rings {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--green);
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  animation: pulse-ring 3s ease-out infinite;
+}
+.ring:nth-child(1) { width: 180px; height: 180px; animation-delay: 0s; }
+.ring:nth-child(2) { width: 280px; height: 280px; animation-delay: 0.8s; }
+.ring:nth-child(3) { width: 380px; height: 380px; animation-delay: 1.6s; }
+
+@keyframes pulse-ring {
+  0%   { opacity: 0.5; transform: translate(-50%,-50%) scale(0.8); }
+  100% { opacity: 0;   transform: translate(-50%,-50%) scale(1); }
+}
+
+.hero-node {
+  position: relative;
+  z-index: 2;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #1A3A24, #0A0F0D);
+  border: 2px solid var(--green);
+  box-shadow: 0 0 40px var(--green-glow), inset 0 0 20px rgba(46,204,113,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.hero-initials {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 36px;
+  font-weight: 500;
+  color: var(--green);
+  letter-spacing: -1px;
+  text-shadow: 0 0 20px var(--green);
+}
+
+.hero-name {
+  font-size: 38px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.hero-name span { color: var(--green); }
+
+.hero-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--orange);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-top: 8px;
+}
+
+.hero-contacts {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.contact-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--gray);
+  background: var(--node-bg);
+  border: 1px solid var(--gray-dim);
+  padding: 5px 12px;
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+
+.contact-chip:hover {
+  border-color: var(--green-dim);
+  color: var(--green);
+}
+
+/* ══════════════════════════════════════
+   LAYER LABELS
+══════════════════════════════════════ */
+.layer-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--green-dim);
+  text-align: center;
+  margin: 28px 0 10px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Text sits cleanly above — no line crossing through it */
+.layer-label::before,
+.layer-label::after { display: none; }
+
+/* Lines go BELOW the text, spread outward from center */
+.layer-label .lines {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+
+.layer-label .line-left,
+.layer-label .line-right {
+  flex: 1;
+  height: 1px;
+}
+
+.layer-label .line-left  { background: linear-gradient(90deg, transparent, var(--green-dim)); }
+.layer-label .line-right { background: linear-gradient(90deg, var(--green-dim), transparent); }
+
+.layer-label .line-dot {
+  width: 4px; height: 4px;
+  background: var(--orange);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════
+   SKILL NODES — INPUT LAYER
+══════════════════════════════════════ */
+.skill-layer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.skill-node {
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--cream);
+  position: relative;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.skill-node::before {
+  content: attr(data-type);
+  position: absolute;
+  top: -8px; left: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  color: var(--orange);
+  background: var(--bg);
+  padding: 0 4px;
+  letter-spacing: 1px;
+}
+
+.skill-node:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 12px var(--green-glow);
+  color: var(--green);
+}
+
+.skill-node.lang  { border-color: #1A3A5A; }
+.skill-node.data  { border-color: #2A3A1A; }
+.skill-node.eng   { border-color: #3A2A1A; }
+.skill-node.soft  { border-color: #2A1A3A; }
+
+/* ══════════════════════════════════════
+   SECTION NODES — HIDDEN LAYERS
+══════════════════════════════════════ */
+.section-node {
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  margin-bottom: 14px;
+  position: relative;
+  transition: border-color 0.3s;
+}
+
+.section-node:hover {
+  border-color: var(--green-dim);
+}
+
+/* Connector dot on left */
+.section-node::before {
+  content: '';
+  position: absolute;
+  left: -6px; top: 28px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+
+/* Node ID label top-right */
+.node-id {
+  position: absolute;
+  top: 12px; right: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--gray-dim);
+  letter-spacing: 1px;
+}
+
+.section-title {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--gray-dim);
+}
+
+/* ── Project / Exp entry ── */
+.entry { margin-bottom: 18px; }
+.entry:last-child { margin-bottom: 0; }
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.entry-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--white);
+  line-height: 1.3;
+}
+
+.entry-title .accent { color: var(--green); }
+
+.entry-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--gray);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+.entry-org {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--green-dim);
+  margin-bottom: 8px;
+}
+
+.entry ul { list-style: none; }
+
+.entry ul li {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--gray);
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 2px;
+}
+
+.entry ul li::before {
+  content: '›';
+  position: absolute;
+  left: 0;
+  color: var(--green);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ── weight badge ── */
+.weight-badge {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  background: rgba(46,204,113,0.1);
+  color: var(--green);
+  border: 1px solid var(--green-dim);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+}
+
+/* ══════════════════════════════════════
+   TWO-COL BOTTOM
+══════════════════════════════════════ */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+/* ── edu ── */
+.edu-entry { margin-bottom: 14px; }
+
+.edu-degree {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--white);
+}
+
+.edu-detail {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--gray);
+  margin-top: 3px;
+  line-height: 1.6;
+}
+
+.edu-date {
+  display: inline-block;
+  margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--orange);
+  background: rgba(232,135,74,0.1);
+  border: 1px solid var(--orange-dim);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* ── lang ── */
+.lang-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gray-dim);
+}
+
+.lang-name { font-size: 12px; color: var(--cream); font-weight: 500; }
+
+.lang-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang-bar {
+  width: 70px; height: 4px;
+  background: var(--gray-dim);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.lang-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--orange));
+  border-radius: 2px;
+}
+
+.lang-level-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--green);
+}
+
+/* ══════════════════════════════════════
+   PRINT
+══════════════════════════════════════ */
+@media print {
+  body { background: #0A0F0D !important; }
+  #neural-bg { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Animated neural network background -->
+<canvas id="neural-bg"></canvas>
+
+<div class="cv-wrap">
+
+  <!-- ══ HERO NODE ══ -->
+  <div class="hero">
+    <div class="hero-rings">
+      <div class="ring"></div>
+      <div class="ring"></div>
+      <div class="ring"></div>
+    </div>
+    <div class="hero-node">
+      <div class="hero-initials">NS</div>
+    </div>
+    <div class="hero-name">Nandika <span style="font-size:0.62em; color: var(--gray); font-weight:400; font-family:'JetBrains Mono',monospace; letter-spacing:2px;">(NAZ)</span> <span>Soni</span></div>
+    <div class="hero-title">AI Engineer &nbsp;/&nbsp; Data Engineer &nbsp;/&nbsp; MBA Candidate</div>
+    <div class="hero-contacts">
+      <div class="contact-chip">📍 Munich, Germany</div>
+      <div class="contact-chip">📞 +49 155 11310609</div>
+      <div class="contact-chip">✉ nandikasoni9@gmail.com</div>
+      <div class="contact-chip">🔗 linkedin.com/in/nandika-soni-771610220</div>
+    </div>
+  </div>
+
+  <!-- ══ INPUT LAYER — SKILLS ══ -->
+  <div class="layer-label">
+    <span>// input_layer :: skills &amp; capabilities</span>
+    <div class="lines"><div class="line-left"></div><div class="line-dot"></div><div class="line-right"></div></div>
+  </div>
+  <div class="skill-layer">
+    <div class="skill-node lang" data-type="LANG">Python</div>
+    <div class="skill-node lang" data-type="LANG">JavaScript</div>
+    <div class="skill-node lang" data-type="LANG">Ruby (learning)</div>
+    <div class="skill-node lang" data-type="LANG">SQL</div>
+    <div class="skill-node lang" data-type="LANG">C / MATLAB</div>
+    <div class="skill-node lang" data-type="LANG">HTML</div>
+    <div class="skill-node data" data-type="DATA">Web Crawling</div>
+    <div class="skill-node data" data-type="DATA">Data Extraction</div>
+    <div class="skill-node data" data-type="DATA">Pipeline Dev</div>
+    <div class="skill-node data" data-type="DATA">REST API Integration</div>
+    <div class="skill-node data" data-type="DATA">Import Mapping</div>
+    <div class="skill-node data" data-type="DATA">ML / Machine Learning</div>
+    <div class="skill-node eng" data-type="ENG">OOP Architecture</div>
+    <div class="skill-node eng" data-type="ENG">Scraping Frameworks</div>
+    <div class="skill-node eng" data-type="ENG">Data Validation</div>
+    <div class="skill-node eng" data-type="ENG">Workflow Automation</div>
+    <div class="skill-node eng" data-type="ENG">Scaling</div>
+    <div class="skill-node soft" data-type="SOFT">Analytical Thinking</div>
+    <div class="skill-node soft" data-type="SOFT">Proactive &amp; Independent</div>
+    <div class="skill-node soft" data-type="SOFT">English C2 — Fluent</div>
+  </div>
+
+  <!-- ══ HIDDEN LAYER 1 — PROJECTS ══ -->
+  <div class="layer-label">
+    <span>// hidden_layer_01 :: project_experience</span>
+    <div class="lines"><div class="line-left"></div><div class="line-dot"></div><div class="line-right"></div></div>
+  </div>
+
+  <div class="section-node">
+    <div class="node-id">node_proj_01 · weight=0.98</div>
+    <div class="section-title">Relevant Project Experience</div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">
+          Robot Navigation System
+          <span class="accent">—</span> Crawling Pipeline &amp; OOP Architecture
+          <span class="weight-badge">w=0.97</span>
+        </div>
+        <div class="entry-meta">2024</div>
+      </div>
+      <ul>
+        <li>Designed an <strong>object-oriented data pipeline</strong> in Python that crawls a graph-based environment, extracts node/edge data, and dynamically re-routes data flow via Dijkstra's algorithm — directly mirroring a job data crawling pipeline architecture.</li>
+        <li>Built modular, reusable OOP components (pathfinder class, blockage generator, visualiser) mapping to scalable, maintainable <strong>data crawling and import mapping frameworks</strong> used in production environments.</li>
+        <li>Automated obstacle detection, re-routing, and failure reporting with zero manual intervention — robust error handling and backtracking ensuring <strong>high-quality data acquisition</strong> under unpredictable conditions.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">
+          Braking Behaviour Analysis
+          <span class="accent">—</span> Data Extraction Pipeline &amp; ML Integration
+          <span class="weight-badge">w=0.94</span>
+        </div>
+        <div class="entry-meta">2024</div>
+      </div>
+      <ul>
+        <li>Built end-to-end <strong>Python data extraction pipeline</strong> with integrated ML classification layer — mirroring Experteer's crawling pipeline with ML-based data classification and import mapping refinement.</li>
+        <li>Applied <strong>web-scraping-style extraction patterns</strong> on unstructured video data; iterated on trigger parameters to improve data flow stability, reliability, and classification accuracy.</li>
+      </ul>
+    </div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">
+          Financial Data Analysis — Puma SE
+          <span class="accent">|</span> External Data Integration &amp; Import Mapping
+          <span class="weight-badge">w=0.89</span>
+        </div>
+        <div class="entry-meta">MBA Coursework · 2025–26</div>
+      </div>
+      <div class="entry-org">EU Business School, Munich</div>
+      <ul>
+        <li>Integrated and mapped external financial data from Puma SE Annual Report 2024 — demonstrating <strong>external data source integration, import mapping,</strong> and data accuracy validation.</li>
+        <li>Built Excel pipelines (Pivot Tables, VLOOKUP) to classify and transform raw financial data; communicated findings clearly to non-technical stakeholders.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══ HIDDEN LAYER 2 — WORK EXP ══ -->
+  <div class="layer-label">
+    <span>// hidden_layer_02 :: work_experience</span>
+    <div class="lines"><div class="line-left"></div><div class="line-dot"></div><div class="line-right"></div></div>
+  </div>
+
+  <div class="section-node">
+    <div class="node-id">node_exp_01 · weight=0.85</div>
+    <div class="section-title">Work Experience</div>
+
+    <div class="entry">
+      <div class="entry-header">
+        <div class="entry-title">Working Student — Data &amp; Marketing Operations</div>
+        <div class="entry-meta">2024</div>
+      </div>
+      <div class="entry-org">DC Model Sr. Secondary School · Panchkula, India</div>
+      <ul>
+        <li>Developed <strong>Python automation scripts</strong> for data collection workflows, improving acquisition quality across 500+ records and reducing manual processing effort by <strong>30%.</strong></li>
+        <li>Implemented <strong>data classification and import mapping logic</strong> across campaign datasets, improving accuracy; collaborated with cross-functional teams to enhance internal data infrastructure.</li>
+        <li>Operated proactively with minimal supervision; automation improvements boosted conversion rates by <strong>15%.</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══ OUTPUT LAYER — EDUCATION + LANGUAGES ══ -->
+  <div class="layer-label">
+    <span>// output_layer :: education &amp; languages</span>
+    <div class="lines"><div class="line-left"></div><div class="line-dot"></div><div class="line-right"></div></div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="section-node">
+      <div class="node-id">node_edu · weight=0.92</div>
+      <div class="section-title">Education</div>
+
+      <div class="edu-entry">
+        <div class="edu-degree">MBA — International Business</div>
+        <div class="edu-detail">EU Business School, Munich<br>Business Informatics &amp; Media Informatics focus</div>
+        <div class="edu-date">Oct 2025 – Dec 2026</div>
+      </div>
+      <div class="edu-entry">
+        <div class="edu-degree">B.Tech — Artificial Intelligence</div>
+        <div class="edu-detail">Mahindra University, Hyderabad<br>Computer Science &amp; Business Informatics · CGPA: 7.1</div>
+        <div class="edu-date">Nov 2021 – Aug 2025</div>
+      </div>
+    </div>
+
+    <div class="section-node">
+      <div class="node-id">node_lang · weight=0.88</div>
+      <div class="section-title">Languages</div>
+
+      <div class="lang-row">
+        <div class="lang-name">English</div>
+        <div class="lang-bar-wrap">
+          <div class="lang-bar"><div class="lang-fill" style="width:100%"></div></div>
+          <div class="lang-level-tag">C2</div>
+        </div>
+      </div>
+      <div class="lang-row">
+        <div class="lang-name">Hindi</div>
+        <div class="lang-bar-wrap">
+          <div class="lang-bar"><div class="lang-fill" style="width:100%"></div></div>
+          <div class="lang-level-tag">Native</div>
+        </div>
+      </div>
+      <div class="lang-row">
+        <div class="lang-name">German</div>
+        <div class="lang-bar-wrap">
+          <div class="lang-bar"><div class="lang-fill" style="width:20%"></div></div>
+          <div class="lang-level-tag">A2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cv-wrap -->
+
+<script>
+// ── Animated neural network background ──────────────────────────
+const canvas = document.getElementById('neural-bg');
+const ctx    = canvas.getContext('2d');
+
+let W, H, nodes = [], animId;
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initNodes() {
+  nodes = [];
+  const count = Math.floor((W * H) / 18000);
+  for (let i = 0; i < count; i++) {
+    nodes.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 1,
+      pulse: Math.random() * Math.PI * 2
+    });
+  }
+}
+
+function draw(t) {
+  ctx.clearRect(0, 0, W, H);
+
+  // Update
+  nodes.forEach(n => {
+    n.x += n.vx;
+    n.y += n.vy;
+    n.pulse += 0.02;
+    if (n.x < 0 || n.x > W) n.vx *= -1;
+    if (n.y < 0 || n.y > H) n.vy *= -1;
+  });
+
+  // Draw edges
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = nodes[i].x - nodes[j].x;
+      const dy = nodes[i].y - nodes[j].y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 140) {
+        const alpha = (1 - dist / 140) * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(nodes[i].x, nodes[i].y);
+        ctx.lineTo(nodes[j].x, nodes[j].y);
+        ctx.strokeStyle = `rgba(46, 204, 113, ${alpha})`;
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const glow = 0.5 + 0.5 * Math.sin(n.pulse);
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(46, 204, 113, ${0.4 + 0.4 * glow})`;
+    ctx.fill();
+  });
+
+  animId = requestAnimationFrame(draw);
+}
+
+window.addEventListener('resize', () => { resize(); initNodes(); });
+resize();
+initNodes();
+draw(0);
+</script>
+
+</body>
+</html>
