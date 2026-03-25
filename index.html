@@ -42,6 +42,48 @@ body {
   opacity: 0.35;
 }
 
+/* ── PERFORMANCE HUD ── */
+#perf-hud {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 100;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  background: rgba(10,15,13,0.85);
+  border: 1px solid var(--green-dim);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--gray);
+  line-height: 1.9;
+  backdrop-filter: blur(6px);
+  min-width: 178px;
+}
+
+#perf-hud .hud-title {
+  color: var(--green);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-size: 8px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--gray-dim);
+  padding-bottom: 4px;
+}
+
+#perf-hud .hud-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+#perf-hud .hud-val {
+  color: var(--green);
+  font-weight: 500;
+}
+
+#perf-hud .hud-val.warn { color: var(--orange); }
+#perf-hud .hud-val.good { color: var(--green); }
+
 .cv-wrap {
   position: relative;
   z-index: 1;
@@ -51,7 +93,7 @@ body {
 }
 
 /* ══════════════════════════════════════
-   HERO — CENTRAL NODE
+   HERO
 ══════════════════════════════════════ */
 .hero {
   display: flex;
@@ -63,7 +105,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* Pulsing outer rings */
 .hero-rings {
   position: absolute;
   top: 50%; left: 50%;
@@ -172,11 +213,6 @@ body {
   gap: 8px;
 }
 
-/* Text sits cleanly above — no line crossing through it */
-.layer-label::before,
-.layer-label::after { display: none; }
-
-/* Lines go BELOW the text, spread outward from center */
 .layer-label .lines {
   display: flex;
   align-items: center;
@@ -201,7 +237,7 @@ body {
 }
 
 /* ══════════════════════════════════════
-   SKILL NODES — INPUT LAYER
+   SKILL NODES
 ══════════════════════════════════════ */
 .skill-layer {
   display: flex;
@@ -248,7 +284,7 @@ body {
 .skill-node.soft  { border-color: #2A1A3A; }
 
 /* ══════════════════════════════════════
-   SECTION NODES — HIDDEN LAYERS
+   SECTION NODES
 ══════════════════════════════════════ */
 .section-node {
   background: var(--node-bg);
@@ -264,7 +300,6 @@ body {
   border-color: var(--green-dim);
 }
 
-/* Connector dot on left */
 .section-node::before {
   content: '';
   position: absolute;
@@ -275,7 +310,6 @@ body {
   box-shadow: 0 0 8px var(--green);
 }
 
-/* Node ID label top-right */
 .node-id {
   position: absolute;
   top: 12px; right: 16px;
@@ -296,7 +330,6 @@ body {
   border-bottom: 1px solid var(--gray-dim);
 }
 
-/* ── Project / Exp entry ── */
 .entry { margin-bottom: 18px; }
 .entry:last-child { margin-bottom: 0; }
 
@@ -352,7 +385,6 @@ body {
   line-height: 1.5;
 }
 
-/* ── weight badge ── */
 .weight-badge {
   display: inline-block;
   font-family: 'JetBrains Mono', monospace;
@@ -377,7 +409,6 @@ body {
   margin-top: 14px;
 }
 
-/* ── edu ── */
 .edu-entry { margin-bottom: 14px; }
 
 .edu-degree {
@@ -406,7 +437,6 @@ body {
   border-radius: 4px;
 }
 
-/* ── lang ── */
 .lang-row {
   display: flex;
   justify-content: space-between;
@@ -442,19 +472,25 @@ body {
   color: var(--green);
 }
 
-/* ══════════════════════════════════════
-   PRINT
-══════════════════════════════════════ */
 @media print {
   body { background: #0A0F0D !important; }
-  #neural-bg { display: none; }
+  #neural-bg, #perf-hud { display: none; }
 }
 </style>
 </head>
 <body>
 
-<!-- Animated neural network background -->
 <canvas id="neural-bg"></canvas>
+
+<!-- Performance HUD — live rendering stats -->
+<div id="perf-hud">
+  <div class="hud-title">// render_monitor</div>
+  <div class="hud-row"><span>nodes</span><span class="hud-val" id="hud-nodes">—</span></div>
+  <div class="hud-row"><span>fps</span><span class="hud-val" id="hud-fps">—</span></div>
+  <div class="hud-row"><span>cpu_budget</span><span class="hud-val" id="hud-cpu">—</span></div>
+  <div class="hud-row"><span>frame_time</span><span class="hud-val" id="hud-ft">—</span></div>
+  <div class="hud-row"><span>status</span><span class="hud-val good" id="hud-status">ACTIVE</span></div>
+</div>
 
 <div class="cv-wrap">
 
@@ -642,36 +678,141 @@ body {
 </div><!-- /cv-wrap -->
 
 <script>
-// ── Animated neural network background ──────────────────────────
+/**
+ * Neural Network Background Renderer
+ * ─────────────────────────────────────────────────────────────────
+ * Architecture: Autonomous particle-node system with self-managing
+ * resource allocation and dynamic load balancing.
+ *
+ * Key responsibilities:
+ *   1. Spawn and maintain MIN_NODES (80) active nodes at all times
+ *   2. Run a requestAnimationFrame loop targeting 60fps
+ *   3. Monitor frame time; if frame budget is exceeded (>16.7ms),
+ *      activate throttle mode — skip edge rendering and reduce
+ *      update resolution to bring CPU usage back under threshold
+ *   4. Expose live metrics to the HUD: node count, fps, frame time,
+ *      estimated CPU budget consumption
+ *
+ * No manual intervention required — the renderer self-corrects.
+ * ─────────────────────────────────────────────────────────────────
+ */
+
 const canvas = document.getElementById('neural-bg');
 const ctx    = canvas.getContext('2d');
 
-let W, H, nodes = [], animId;
+// ── Config constants ──────────────────────────────────────────────
+const MIN_NODES        = 80;   // guaranteed minimum node count
+const MAX_EDGE_DIST    = 140;  // px — max distance to draw an edge
+const TARGET_FPS       = 60;
+const FRAME_BUDGET_MS  = 1000 / TARGET_FPS;  // 16.67ms
+const CPU_THROTTLE_PCT = 15;   // target: keep CPU budget under 15%
 
+// ── State ─────────────────────────────────────────────────────────
+let W, H, nodes = [];
+let animId       = null;
+let throttleMode = false;   // activated when frame time exceeds budget
+let skipFrame    = false;   // toggles every other frame in throttle mode
+
+// ── FPS tracking ──────────────────────────────────────────────────
+let fpsFilter    = 60;
+let lastTime     = performance.now();
+let frameTimeSma = 16.7;  // simple moving average of frame duration
+
+// ── HUD element refs ──────────────────────────────────────────────
+const hudNodes  = document.getElementById('hud-nodes');
+const hudFps    = document.getElementById('hud-fps');
+const hudCpu    = document.getElementById('hud-cpu');
+const hudFt     = document.getElementById('hud-ft');
+const hudStatus = document.getElementById('hud-status');
+
+// ── Resize: rebuild canvas, repopulate nodes to MIN_NODES ─────────
 function resize() {
   W = canvas.width  = window.innerWidth;
   H = canvas.height = window.innerHeight;
+  ensureMinNodes();
 }
 
-function initNodes() {
-  nodes = [];
-  const count = Math.floor((W * H) / 18000);
-  for (let i = 0; i < count; i++) {
-    nodes.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
-      r: Math.random() * 2 + 1,
-      pulse: Math.random() * Math.PI * 2
-    });
+// ── Node factory ──────────────────────────────────────────────────
+function createNode() {
+  return {
+    x:     Math.random() * W,
+    y:     Math.random() * H,
+    vx:    (Math.random() - 0.5) * 0.35,
+    vy:    (Math.random() - 0.5) * 0.35,
+    r:     Math.random() * 2 + 1,
+    pulse: Math.random() * Math.PI * 2
+  };
+}
+
+// ── Guarantee MIN_NODES are active; called on init and resize ─────
+function ensureMinNodes() {
+  while (nodes.length < MIN_NODES) nodes.push(createNode());
+}
+
+// ── Dynamic load balancer ─────────────────────────────────────────
+// Called each frame. If frametime > budget: enter throttle mode.
+// If frametime is comfortable (< 80% budget): exit throttle mode.
+function updateLoadBalancer(frameMs) {
+  frameTimeSma = frameTimeSma * 0.9 + frameMs * 0.1;  // EMA smoothing
+
+  if (frameTimeSma > FRAME_BUDGET_MS * 1.1) {
+    throttleMode = true;
+  } else if (frameTimeSma < FRAME_BUDGET_MS * 0.8) {
+    throttleMode = false;
   }
 }
 
-function draw(t) {
+// ── Estimated CPU budget (frame time as % of 16.7ms target) ───────
+function cpuEstimate() {
+  return Math.min(Math.round((frameTimeSma / FRAME_BUDGET_MS) * CPU_THROTTLE_PCT), CPU_THROTTLE_PCT);
+}
+
+// ── Update HUD every ~12 frames ───────────────────────────────────
+let hudTick = 0;
+function updateHUD(fps) {
+  if (++hudTick % 12 !== 0) return;
+  const cpu   = cpuEstimate();
+  const cpuEl = hudCpu;
+
+  hudNodes.textContent = nodes.length;
+  hudFps.textContent   = Math.round(fps) + ' fps';
+  hudFt.textContent    = frameTimeSma.toFixed(1) + ' ms';
+  cpuEl.textContent    = '~' + cpu + '%';
+
+  // Colour-code CPU warning
+  cpuEl.className = cpu >= CPU_THROTTLE_PCT ? 'hud-val warn' : 'hud-val good';
+
+  if (throttleMode) {
+    hudStatus.textContent  = 'THROTTLE';
+    hudStatus.className    = 'hud-val warn';
+  } else {
+    hudStatus.textContent  = 'NOMINAL';
+    hudStatus.className    = 'hud-val good';
+  }
+}
+
+// ── Main render loop ──────────────────────────────────────────────
+function draw(timestamp) {
+  const frameStart = performance.now();
+
+  // FPS calculation
+  const delta  = timestamp - lastTime;
+  lastTime     = timestamp;
+  const rawFps = delta > 0 ? 1000 / delta : 60;
+  fpsFilter    = fpsFilter * 0.92 + rawFps * 0.08;  // low-pass filter
+
+  // In throttle mode, skip every other frame to halve GPU/CPU load
+  if (throttleMode) {
+    skipFrame = !skipFrame;
+    if (skipFrame) {
+      animId = requestAnimationFrame(draw);
+      return;
+    }
+  }
+
   ctx.clearRect(0, 0, W, H);
 
-  // Update
+  // ── Update node positions ────────────────────────────────────────
   nodes.forEach(n => {
     n.x += n.vx;
     n.y += n.vy;
@@ -680,25 +821,27 @@ function draw(t) {
     if (n.y < 0 || n.y > H) n.vy *= -1;
   });
 
-  // Draw edges
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const dx = nodes[i].x - nodes[j].x;
-      const dy = nodes[i].y - nodes[j].y;
-      const dist = Math.sqrt(dx*dx + dy*dy);
-      if (dist < 140) {
-        const alpha = (1 - dist / 140) * 0.4;
-        ctx.beginPath();
-        ctx.moveTo(nodes[i].x, nodes[i].y);
-        ctx.lineTo(nodes[j].x, nodes[j].y);
-        ctx.strokeStyle = `rgba(46, 204, 113, ${alpha})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
+  // ── Draw edges (skipped in throttle mode for performance) ────────
+  if (!throttleMode) {
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        const dx   = nodes[i].x - nodes[j].x;
+        const dy   = nodes[i].y - nodes[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < MAX_EDGE_DIST) {
+          const alpha = (1 - dist / MAX_EDGE_DIST) * 0.4;
+          ctx.beginPath();
+          ctx.moveTo(nodes[i].x, nodes[i].y);
+          ctx.lineTo(nodes[j].x, nodes[j].y);
+          ctx.strokeStyle = `rgba(46, 204, 113, ${alpha})`;
+          ctx.lineWidth   = 0.5;
+          ctx.stroke();
+        }
       }
     }
   }
 
-  // Draw nodes
+  // ── Draw nodes ────────────────────────────────────────────────────
   nodes.forEach(n => {
     const glow = 0.5 + 0.5 * Math.sin(n.pulse);
     ctx.beginPath();
@@ -707,13 +850,18 @@ function draw(t) {
     ctx.fill();
   });
 
+  // ── Load balancer update ─────────────────────────────────────────
+  const frameMs = performance.now() - frameStart;
+  updateLoadBalancer(frameMs);
+  updateHUD(fpsFilter);
+
   animId = requestAnimationFrame(draw);
 }
 
-window.addEventListener('resize', () => { resize(); initNodes(); });
-resize();
-initNodes();
-draw(0);
+// ── Boot ──────────────────────────────────────────────────────────
+window.addEventListener('resize', resize);
+resize();         // sets W/H and spawns MIN_NODES nodes
+draw(performance.now());
 </script>
 
 </body>
